@@ -6,7 +6,6 @@ import prawcore
 from dotenv import load_dotenv
 from praw.models import MoreComments
 
-from database.database import database
 from model.subreddit import Subreddit, RedditSubmission, RedditComment, CrossPost
 
 """
@@ -25,43 +24,6 @@ reddit_client = praw.Reddit(
     client_secret=os.getenv("CLIENT_SECRET"),
     user_agent=user_agent,
 )
-
-
-def get_subreddits_to_explore():
-    """
-    Makes a call to the database to get all the subreddits that are not currently explored, but that were identified
-    earlier in some crossposts.
-    :return: a list of str representing subreddits names
-    """
-    subreddits_records = database.get_unsaved_subreddits()
-    subreddits = [subred[0] for subred in subreddits_records]
-    return subreddits
-
-
-def collect_subreddits(subreddits: [str] = None):
-    """
-    Go through the list of subreddits collecting all the submissions, crossposts and comments, and them save them
-    in the database (in batch).
-    :param subreddits: list of str representing subreddits. Can be null.
-    """
-
-    if not subreddits:
-        subreddits = get_subreddits_to_explore()
-
-    for subreddit in subreddits:
-        print(f"Getting posts from subreddit: '{subreddit}'.")
-
-        subreddit_info, submissions, crossposts = collect_submissions(subreddit)
-        comments = []
-        for subm in submissions:
-            comments.extend(subm.comments)
-
-        # Update Database
-        database.save_subreddit(subreddit=subreddit_info)
-        database.save_submissions(submissions=submissions)
-        database.save_crossposts(crossposts=crossposts)
-        database.save_comments(comments=comments)
-        print(f"\t Saving information of subreddit: '{subreddit}'.")
 
 
 def post_type(submission) -> str:
@@ -146,7 +108,7 @@ def collect_submissions(subreddit: str):
 
     while not subreddit_info and int(time.time()) < time_start + timeout:
         try:
-            for submission in reddit_client.subreddit(subreddit).top(limit=350):  # limit=None get all the possible
+            for submission in reddit_client.subreddit(subreddit).top(limit=1):  # limit=None get all the possible
                 # posts
                 print(f"\t\t Collecting submission {submission.id}.")
 
@@ -218,14 +180,3 @@ def collect_comments(submission):
         comments.append(comm)
 
     return comments
-
-# Example of collecting information from the subreddits in the list
-
-# while True:
-#     subreddits_to_explore = get_subreddits_to_explore()
-#     if not subreddits_to_explore:
-#         break
-#     collect_subreddits(subreddits=subreddits_to_explore)
-#
-
-# collect_subreddits(subreddits=["announcements"])
