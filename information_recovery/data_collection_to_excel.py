@@ -1,12 +1,12 @@
 import xlsxwriter
 
-from data_collection_to_db import get_subreddits_to_explore, collect_submissions
+from information_recovery.reddit_connection import collect_submissions
 
 workbook = xlsxwriter.Workbook("reddit_info.xlsx")
-subreddits_worksheet = workbook.add_worksheet()
-submissions_worksheet = workbook.add_worksheet()
-comments_worksheet = workbook.add_worksheet()
-crossposts_worksheet = workbook.add_worksheet()
+subreddits_worksheet = workbook.add_worksheet(name="subreddits")
+submissions_worksheet = workbook.add_worksheet(name="submissions")
+comments_worksheet = workbook.add_worksheet(name="comments")
+crossposts_worksheet = workbook.add_worksheet(name="crossposts")
 
 # Start from the first cell.
 # Rows and columns are zero indexed.
@@ -31,6 +31,7 @@ def add_subreddit(subreddit):
 def add_submission(submission):
     global submission_row
 
+    print("HI THERE")
     submissions_worksheet.write(submission_row, 0, submission.id)
     submissions_worksheet.write(submission_row, 1, submission.title)
     submissions_worksheet.write(submission_row, 2, submission.author)
@@ -46,19 +47,20 @@ def add_submission(submission):
     submissions_worksheet.write(submission_row, 12, submission.subreddit)
 
     submission_row += 1
+    print(submission_row)
 
 
 def add_comment(comment):
     global comment_row
 
-    subreddits_worksheet.write(comment_row, 0, comment.id)
-    subreddits_worksheet.write(comment_row, 1, comment.text)
-    subreddits_worksheet.write(comment_row, 2, comment.author)
-    subreddits_worksheet.write(comment_row, 3, comment.date_created)
-    subreddits_worksheet.write(comment_row, 4, comment.parent_id)
-    subreddits_worksheet.write(comment_row, 5, comment.submission_id)
-    subreddits_worksheet.write(comment_row, 6, comment.upvote_ratio)
-    subreddits_worksheet.write(comment_row, 7, comment.pinned)
+    comments_worksheet.write(comment_row, 0, comment.id)
+    comments_worksheet.write(comment_row, 1, comment.text)
+    comments_worksheet.write(comment_row, 2, comment.author)
+    comments_worksheet.write(comment_row, 3, comment.date_created)
+    comments_worksheet.write(comment_row, 4, comment.parent_id)
+    comments_worksheet.write(comment_row, 5, comment.submission_id)
+    comments_worksheet.write(comment_row, 6, comment.upvote_ratio)
+    comments_worksheet.write(comment_row, 7, comment.pinned)
 
     comment_row += 1
 
@@ -66,21 +68,18 @@ def add_comment(comment):
 def add_crosspost(crosspost):
     global crosspost_row
 
-    subreddits_worksheet.write(crosspost, 0, crosspost.crosspost_parent_id)
-    subreddits_worksheet.write(crosspost, 1, crosspost.post_id)
+    crossposts_worksheet.write(crosspost_row, 0, crosspost.crosspost_parent_id)
+    crossposts_worksheet.write(crosspost_row, 1, crosspost.post_id)
 
     crosspost_row += 1
 
 
-def collect_subreddits(subreddits: [str] = None):
+def collect_subreddits(subreddits: [str]):
     """
     Go through the list of subreddits collecting all the submissions, crossposts and comments, and them save them
     in an excel (in batch).
     :param subreddits: list of str representing subreddits. Can be null.
     """
-
-    if not subreddits:
-        subreddits = get_subreddits_to_explore()
 
     for subreddit in subreddits:
         print(f"Getting posts from subreddit: '{subreddit}'.")
@@ -100,7 +99,8 @@ def collect_subreddits(subreddits: [str] = None):
         print(f"\t Saving information of subreddit: '{subreddit}'.")
 
 
+def close_file():
+    workbook.close()
+
 # Example of collecting the information
 # collect_subreddits(subreddits=["announcements"])
-
-workbook.close()
