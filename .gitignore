@@ -1,0 +1,11 @@
+# ignore ALL .log files
+*.log
+
+# ignore .env file
+.env
+
+# ignore virtual environment
+venv/
+
+# ignore .idea/
+.idea/
