@@ -1,77 +1,63 @@
-import xlsxwriter
+import os.path
+
+import openpyxl
 
 from information_recovery.reddit_connection import collect_submissions
 
-workbook = xlsxwriter.Workbook("reddit_info.xlsx")
-subreddits_worksheet = workbook.add_worksheet(name="subreddits")
-submissions_worksheet = workbook.add_worksheet(name="submissions")
-comments_worksheet = workbook.add_worksheet(name="comments")
-crossposts_worksheet = workbook.add_worksheet(name="crossposts")
+file_name = "reddit_info.xlsx"
+exist_file = os.path.exists(file_name)
 
-# Start from the first cell.
-# Rows and columns are zero indexed.
-subreddit_row = 0
-submission_row = 0
-comment_row = 0
-crosspost_row = 0
+if not exist_file:
+    workbook = openpyxl.Workbook(file_name)
+    workbook.create_sheet("subreddits", 0)
+    workbook.create_sheet("submissions", 1)
+    workbook.create_sheet("comments", 2)
+    workbook.create_sheet("crossposts", 3)
+    workbook.save(file_name)
+    workbook.close()
 
 
 def add_subreddit(subreddit):
-    global subreddit_row
+    workbook = openpyxl.load_workbook(file_name)
+    subreddits_worksheet = workbook["subreddits"]
+    entry = (subreddit.name, subreddit.description, subreddit.date_created, subreddit.nsfw, subreddit.subscribers)
+    subreddits_worksheet.append(entry)
 
-    subreddits_worksheet.write(subreddit_row, 0, subreddit.name)
-    subreddits_worksheet.write(subreddit_row, 1, subreddit.description)
-    subreddits_worksheet.write(subreddit_row, 2, subreddit.date_created)
-    subreddits_worksheet.write(subreddit_row, 3, subreddit.nsfw)
-    subreddits_worksheet.write(subreddit_row, 4, subreddit.subscribers)
-
-    subreddit_row += 1
+    workbook.save(file_name)
+    workbook.close()
 
 
 def add_submission(submission):
-    global submission_row
+    workbook = openpyxl.load_workbook(file_name)
+    submission_worksheet = workbook["submissions"]
+    entry = (submission.id, submission.title, submission.author, submission.date_created, submission.nsfw,
+             submission.post_type, submission.upvote_ratio, submission.total_awards, submission.num_crossposts,
+             submission.text, submission.video_duration, submission.category, submission.subreddit)
+    submission_worksheet.append(entry)
 
-    print("HI THERE")
-    submissions_worksheet.write(submission_row, 0, submission.id)
-    submissions_worksheet.write(submission_row, 1, submission.title)
-    submissions_worksheet.write(submission_row, 2, submission.author)
-    submissions_worksheet.write(submission_row, 3, submission.date_created)
-    submissions_worksheet.write(submission_row, 4, submission.nsfw)
-    submissions_worksheet.write(submission_row, 5, submission.post_type)
-    submissions_worksheet.write(submission_row, 6, submission.upvote_ratio)
-    submissions_worksheet.write(submission_row, 7, submission.total_awards)
-    submissions_worksheet.write(submission_row, 8, submission.num_crossposts)
-    submissions_worksheet.write(submission_row, 9, submission.text)
-    submissions_worksheet.write(submission_row, 10, submission.video_duration)
-    submissions_worksheet.write(submission_row, 11, submission.category)
-    submissions_worksheet.write(submission_row, 12, submission.subreddit)
-
-    submission_row += 1
-    print(submission_row)
+    workbook.save(file_name)
+    workbook.close()
 
 
 def add_comment(comment):
-    global comment_row
+    workbook = openpyxl.load_workbook(file_name)
+    comments_worksheet = workbook["comments"]
+    entry = (comment.id, comment.text, comment.author, comment.date_created, comment.parent_id,
+             comment.submission_id, comment.upvote_ratio, comment.pinned)
+    comments_worksheet.append(entry)
 
-    comments_worksheet.write(comment_row, 0, comment.id)
-    comments_worksheet.write(comment_row, 1, comment.text)
-    comments_worksheet.write(comment_row, 2, comment.author)
-    comments_worksheet.write(comment_row, 3, comment.date_created)
-    comments_worksheet.write(comment_row, 4, comment.parent_id)
-    comments_worksheet.write(comment_row, 5, comment.submission_id)
-    comments_worksheet.write(comment_row, 6, comment.upvote_ratio)
-    comments_worksheet.write(comment_row, 7, comment.pinned)
-
-    comment_row += 1
+    workbook.save(file_name)
+    workbook.close()
 
 
 def add_crosspost(crosspost):
-    global crosspost_row
+    workbook = openpyxl.load_workbook(file_name)
+    crossposts_worksheet = workbook["crossposts"]
+    entry = (crosspost.crosspost_parent_id, crosspost.post_id)
+    crossposts_worksheet.append(entry)
 
-    crossposts_worksheet.write(crosspost_row, 0, crosspost.crosspost_parent_id)
-    crossposts_worksheet.write(crosspost_row, 1, crosspost.post_id)
-
-    crosspost_row += 1
+    workbook.save(file_name)
+    workbook.close()
 
 
 def collect_subreddits(subreddits: [str]):
@@ -99,8 +85,5 @@ def collect_subreddits(subreddits: [str]):
         print(f"\t Saving information of subreddit: '{subreddit}'.")
 
 
-def close_file():
-    workbook.close()
-
 # Example of collecting the information
-# collect_subreddits(subreddits=["announcements"])
+collect_subreddits(subreddits=["lifehacks"])

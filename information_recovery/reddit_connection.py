@@ -108,7 +108,7 @@ def collect_submissions(subreddit: str):
 
     while not subreddit_info and int(time.time()) < time_start + timeout:
         try:
-            for submission in reddit_client.subreddit(subreddit).top(limit=1):  # limit=None get all the possible
+            for submission in reddit_client.subreddit(subreddit).top(limit=350):  # limit=None get all the possible
                 # posts
                 print(f"\t\t Collecting submission {submission.id}.")
 
