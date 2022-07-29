@@ -50,5 +50,5 @@ def collect_subreddits(subreddits: [str] = None):
 #     collect_subreddits(subreddits=subreddits_to_explore)
 #
 
-collect_subreddits(subreddits=["lifehacks", "NatureIsFuckingLit", "oddlysatisfying", "Unexpected",
-                               "relationship_advice", "WTF", "Minecraft"])
+#collect_subreddits(subreddits=["lifehacks", "NatureIsFuckingLit", "oddlysatisfying", "Unexpected",
+#                               "relationship_advice", "WTF", "Minecraft"])

@@ -83,7 +83,3 @@ def collect_subreddits(subreddits: [str]):
             add_crosspost(crossp)
 
         print(f"\t Saving information of subreddit: '{subreddit}'.")
-
-
-# Example of collecting the information
-collect_subreddits(subreddits=["lifehacks"])
