@@ -6,7 +6,7 @@ import prawcore
 from dotenv import load_dotenv
 from praw.models import MoreComments
 
-from model.subreddit import Subreddit, RedditSubmission, RedditComment, CrossPost
+from database.subreddit import Subreddit, RedditSubmission, RedditComment, CrossPost
 
 """
     Loading environment variables
@@ -110,7 +110,7 @@ def collect_submissions(subreddit: str):
         try:
             for submission in reddit_client.subreddit(subreddit).top(limit=350):  # limit=None get all the possible
                 # posts
-                print(f"\t\t Collecting submission {submission.id}.")
+                print(f"\t [{subreddit}] Collecting submission {submission.id}.")
 
                 # Getting the information of the Subreddit
                 if first:
@@ -130,13 +130,13 @@ def collect_submissions(subreddit: str):
                     continue
 
                 # We also get the post for each crosspost.
-                for duplicate in submission.duplicates():
+                for duplicate in submission.duplicates(limit=50):
                     post_dup = create_submission(duplicate)
 
                     if not post_dup:
                         continue
 
-                    print(f"\t\t Collecting crosspost {post_dup.id}.")
+                    print(f"\t [{subreddit}] - Collecting crosspost {post_dup.id}.")
 
                     submissions.append(post_dup)
 
@@ -146,7 +146,13 @@ def collect_submissions(subreddit: str):
         except prawcore.exceptions.ServerError as e:
             # wait for 30 seconds since sending more requests to overloaded server might not be helping
             last_exception = e
+            print("### Server error - Waiting a minute before trying again ###")
             time.sleep(30)
+        except prawcore.exceptions.RequestException as e:
+            # exception is related with internet connection
+            last_exception = e
+            print("### Connection error - Waiting two minutes before trying again ###")
+            time.sleep(120)
 
     if not subreddit_info:
         raise last_exception
@@ -157,7 +163,7 @@ def collect_submissions(subreddit: str):
 def collect_comments(submission):
     """
     Goes through each comment in the submission and creates instances of RedditComment with the comment information.
-    :param submission: the submission informacion
+    :param submission: the submission information
     :return: a list of RedditComment's.
     """
     comments = []
@@ -176,7 +182,8 @@ def collect_comments(submission):
         submission_id = comment.parent_id if "submission_id" not in vars(comment).keys() else comment.submission_id
         comm = RedditComment(comment_id=comment.id, text=comment.body, author=author,
                              date_created=comment.created_utc, parent_id=comment.parent_id,
-                             submission_id=submission_id, upvote_ratio=score, pinned=comment.stickied)
+                             submission_id=submission_id.replace("t3_", ""), upvote_ratio=score,
+                             pinned=comment.stickied)
         comments.append(comm)
 
     return comments
