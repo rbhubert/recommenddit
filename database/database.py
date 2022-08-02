@@ -35,8 +35,13 @@ class Database(metaclass=Singleton):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.db_conn.close()
 
-    def get_info(self, condition_where, condition_from):
-        self.cursor.execute(f"SELECT {condition_where} FROM {condition_from};")
+    def get_info(self, select_columns, condition_from, condition_where=None):
+        sql_statement = f"SELECT {select_columns} FROM {condition_from}"
+        if condition_where:
+            sql_statement += f" WHERE {condition_where}"
+        sql_statement += ";"
+
+        self.cursor.execute(sql_statement)
 
         # Retrieve query results
         records = self.cursor.fetchall()
@@ -49,10 +54,9 @@ class Database(metaclass=Singleton):
         insert_query = f"""INSERT INTO {table} ({columns}) values %s ON CONFLICT DO NOTHING;"""
         execute_values(self.cursor, insert_query, values)
 
-    def get_subreddit_info(self, info_id):
+    def get_subreddit_info(self, subreddit_name):
         table = "subreddit"
-        records = self.get_info(condition_where="*", condition_from=table)
-        return records
+        pass
 
     def save_subreddit(self, subreddit):
         """

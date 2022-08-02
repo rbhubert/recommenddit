@@ -34,8 +34,8 @@ def collect_subreddits(subreddits: [str] = None):
         # Update Database
         database.save_subreddit(subreddit=subreddit_info)
         database.save_submissions(submissions=submissions)
-        database.save_crossposts(crossposts=crossposts)
         database.save_comments(comments=comments)
+        database.save_crossposts(crossposts=crossposts)
         print(f"\t Saving information of subreddit: '{subreddit}'.")
 
 
@@ -50,5 +50,5 @@ def collect_subreddits(subreddits: [str] = None):
 #     collect_subreddits(subreddits=subreddits_to_explore)
 #
 
-#collect_subreddits(subreddits=["lifehacks", "NatureIsFuckingLit", "oddlysatisfying", "Unexpected",
-#                               "relationship_advice", "WTF", "Minecraft"])
+collect_subreddits(subreddits=["oddlysatisfying", "Unexpected",
+                               "relationship_advice", "WTF", "Minecraft"])
