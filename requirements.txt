@@ -2,3 +2,4 @@ praw==7.6.0
 python-dotenv==0.20.0
 psycopg2==2.9.3
 pandas==1.4.3
+spacy==3.4.1

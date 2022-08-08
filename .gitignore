@@ -48,3 +48,9 @@ coverage.xml
 
 # env folder
 env/
+
+# csv's inside data folder
+data/*.csv
+
+# ipynb
+*.ipynb

@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 
 import psycopg2
 from dotenv import load_dotenv
@@ -12,10 +13,18 @@ from utils.singleton import Singleton
 """
 load_dotenv()
 
+DATABASE_NAME = os.getenv("DATABASE_NAME")
 DATABASE_HOST = os.getenv("DATABASE_HOST")
 DATABASE_USER = os.getenv("DATABASE_USER")
 DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
 DATABASE_PORT = os.getenv("DATABASE_PORT")
+
+
+class RedditTables(Enum):
+    SUBREDDITS = "subreddit"
+    SUBMISSIONS = "submission"
+    CROSSPOSTS = "crosspost"
+    COMMENTS = "reddit_replies"
 
 
 class Database(metaclass=Singleton):
@@ -24,7 +33,7 @@ class Database(metaclass=Singleton):
     """
 
     def __init__(self):
-        self.db_conn = psycopg2.connect(database="recommenddit",
+        self.db_conn = psycopg2.connect(database=DATABASE_NAME,
                                         host=DATABASE_HOST,
                                         user=DATABASE_USER,
                                         password=DATABASE_PASSWORD,
@@ -55,23 +64,25 @@ class Database(metaclass=Singleton):
         execute_values(self.cursor, insert_query, values)
 
     def get_subreddit_info(self, subreddit_name):
-        table = "subreddit"
+        table = RedditTables.SUBREDDITS.value
         pass
 
-    def save_subreddit(self, subreddit):
+    def save_subreddits(self, subreddits: ["Subreddit"]):
         """
         Saves the subreddit information in the database.
         """
-        table = "subreddit"
+        table = RedditTables.SUBREDDITS.value
         columns = "name, description, date_created, nsfw, subscribers"
-        values = (subreddit.name, subreddit.description, subreddit.date_created, subreddit.nsfw, subreddit.subscribers)
-        return self.add_info(table=table, columns=columns, values=[values])
+        values = [(subreddit.name, subreddit.description, subreddit.date_created, subreddit.nsfw,
+                   subreddit.subscribers)
+                  for subreddit in subreddits]
+        return self.add_info(table=table, columns=columns, values=values)
 
     def save_submissions(self, submissions: ["RedditSubmission"]):
         """
         Saves a list of submissions in the database.
         """
-        table = "submission"
+        table = RedditTables.SUBMISSIONS.value
         columns = "post_id, title, author, date_created, nsfw, post_type, upvote_ratio, " \
                   "total_awards, num_crossposts, post_content, video_duration, category,subreddit"
         values = [(submission.id, submission.title, submission.author, submission.date_created, submission.nsfw,
@@ -84,7 +95,7 @@ class Database(metaclass=Singleton):
         """
         Saves a list of crossposts in the database.
         """
-        table = "crosspost"
+        table = RedditTables.CROSSPOSTS.value
         columns = "crosspost_parent_id, crosspost_id"
         values = [(crosspost.crosspost_parent_id, crosspost.post_id) for crosspost in crossposts]
         return self.add_info(table=table, columns=columns, values=values)
@@ -93,7 +104,7 @@ class Database(metaclass=Singleton):
         """
         Saves a list of comments in the database.
         """
-        table = "reddit_replies"
+        table = RedditTables.COMMENTS.value
         columns = "comment_id, comment_content, author, date_created, parent_id, submission_id, upvote_ratio, pinned"
         values = [(comment.id, comment.text, comment.author, comment.date_created, comment.parent_id,
                    comment.submission_id, comment.upvote_ratio, comment.pinned) for comment in comments]
