@@ -127,5 +127,21 @@ class Database(metaclass=Singleton):
         records = self.cursor.fetchall()
         return records
 
+    def get_uncompleted_subreddits(self, min_submissions):
+        sql_select = f"""
+                    SELECT subreddit, max(post_id) AS last_id, count(post_id) AS number_posts
+                    FROM    (SELECT subreddit, post_id FROM submission 
+                            WHERE (subreddit IN (SELECT name FROM subreddit)) 
+                            AND (post_id IN (SELECT crosspost_parent_id FROM crosspost))) AS subquery
+                    GROUP BY subreddit
+                    HAVING count(post_id) < {min_submissions}
+                    ORDER BY number_posts ASC
+                    """
+        self.cursor.execute(sql_select)
+
+        # Retrieve query results
+        records = self.cursor.fetchall()
+        return records
+
 
 database = Database()

@@ -29,6 +29,7 @@ reddit_client = praw.Reddit(
 def post_type(submission) -> str:
     """
     Determines the type of the submission/post. Can be "image", "gallery", "video", "poll", "text" or "link".
+
     :param submission: the information of the submission.
     :return: a str representing the type of the post.
     """
@@ -48,8 +49,9 @@ def post_type(submission) -> str:
 def create_submission(submission):
     """
     Creates an instance of RedditSubmission using the information of the submission/post.
+
     :param submission: the information about the submission.
-    :return: a instance of RedditSubmission
+    :return: an instance of RedditSubmission
     """
     subreddit_name = submission.subreddit.display_name
 
@@ -83,24 +85,28 @@ def create_submission(submission):
     return post
 
 
-def collect_submissions(subreddit: str, submissions_limit: int = 350, crossposts_limit: int = 25):
+def collect_submissions(subreddit: str, last_submission: [str, int] = None,
+                        submissions_limit: int = 350, crossposts_limit: int = 10):
     """
     Goes through each submission in the subreddit, obtaining also all the comments for each submission.
     We also get the information of the subreddit.
+
     :param subreddit: a str representing the name of a subreddit.
-    :param submissions_limit: a integer between 1 and 1000 representing the number of submissions to be retrieved for the
-    subreddit. Default value=350
-    :param crossposts_limit: a integer between 1 and 1000 representing the number of crossposts to be retrieved for each
-    submission. Default value=3
+    :param last_submission: a [str, int] representing the id of the last_submission retrieved for that subreddit and the offset/number of submissions already processed.
+    :param submissions_limit: an integer between 1 and 1000 representing the number of submissions to be retrieved for the subreddit. Default value=350
+    :param crossposts_limit: an integer between 1 and 1000 representing the number of crossposts to be retrieved for each submission. Default value=3
     :return:
         - subreddit_info: a Subreddit instance with the information of the subreddit.
         - submissions: a list of RedditSubmission's with the information of each submission.
         - crossposts: a list of CrossPost's of each found crossposts.
     """
-
-    first = True
-
     # todo Add related subreddits to each subreddit. This vary between subreddits
+
+    if last_submission:
+        submissions_limit = submissions_limit - last_submission[1]
+        last_submission = last_submission[0] if last_submission[0] else ""
+    else:
+        last_submission = ""
 
     subreddit_info = None
     submissions = []
@@ -109,40 +115,50 @@ def collect_submissions(subreddit: str, submissions_limit: int = 350, crossposts
     last_exception = None
     timeout = 900  # seconds = 15 minutes
     time_start = int(time.time())
+    number_submissions_retrieved = 0
 
-    while not subreddit_info and int(time.time()) < time_start + timeout:
+    while (number_submissions_retrieved < submissions_limit) and int(time.time()) < time_start + timeout:
         try:
-            for submission in reddit_client.subreddit(subreddit).top(
-                    limit=submissions_limit):  # limit=None get all the possible
-                # posts
+            params = {"after": last_submission} if last_submission else {}
+
+            for submission in reddit_client.subreddit(subreddit).top(limit=submissions_limit,
+                                                                     params=params):
+                # limit=None get all the possible posts
                 print(f"\t [{subreddit}] Collecting submission {submission.id}.")
 
-                # Getting the information of the Subreddit
-                if first:
+                # Getting the information of the Subreddit only the first time we get a submission
+                if not number_submissions_retrieved:
                     subreddit_info = Subreddit(name=submission.subreddit.display_name,
                                                description=submission.subreddit.public_description,
                                                date_created=submission.subreddit.created_utc,
                                                nsfw=submission.subreddit.over18,
                                                subscribers=submission.subreddit.subscribers)
-                    first = False
 
                 # Obtaining the information of the submission
                 post = create_submission(submission)
+
+                if not post:
+                    continue
+
                 submissions.append(post)
+
+                number_submissions_retrieved += 1
+                last_submission = "t3_" + post.id
 
                 # If the post does not have crossposts
                 if submission.num_crossposts == 0:
                     continue
 
-                # We also get the post for each crosspost --- limit = 25
+                # We also get the post for each crosspost --- limit = 10
                 for duplicate in submission.duplicates(limit=crossposts_limit):
+
+                    # Avoiding crossposts to profiles.
+                    if duplicate.subreddit.display_name.startswith(("u_", "u/")):
+                        return None
+
+                    print(f"\t [{subreddit}] Collecting crosspost.")
+
                     post_dup = create_submission(duplicate)
-
-                    if not post_dup:
-                        continue
-
-                    print(f"\t [{subreddit}] - Collecting crosspost {post_dup.id}.")
-
                     submissions.append(post_dup)
 
                     crosspost = CrossPost(parent_id=post.id, post_id=post_dup.id)
@@ -159,7 +175,9 @@ def collect_submissions(subreddit: str, submissions_limit: int = 350, crossposts
             print("### Connection error - Waiting two minutes before trying again ###")
             time.sleep(120)
 
-    if not subreddit_info:
+    if number_submissions_retrieved != submissions_limit:
+        print(f"### We weren't able to collect all {submissions_limit} submissions for {subreddit} subreddit. ###")
+        print(" ### Please try again. ###")
         raise last_exception
 
     return subreddit_info, submissions, crossposts
@@ -168,6 +186,7 @@ def collect_submissions(subreddit: str, submissions_limit: int = 350, crossposts
 def collect_comments(submission):
     """
     Goes through each comment in the submission and creates instances of RedditComment with the comment information.
+
     :param submission: the submission information
     :return: a list of RedditComment's.
     """
