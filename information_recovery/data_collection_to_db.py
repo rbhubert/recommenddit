@@ -32,23 +32,8 @@ def collect_subreddits(subreddits: [str] = None):
             comments.extend(subm.comments)
 
         # Update Database
-        database.save_subreddit(subreddit=subreddit_info)
+        database.save_subreddit(subreddit=[subreddit_info])
         database.save_submissions(submissions=submissions)
         database.save_comments(comments=comments)
         database.save_crossposts(crossposts=crossposts)
         print(f"\t Saving information of subreddit: '{subreddit}'.")
-
-
-"""
-    Example of collecting information from the subreddits in the list
-"""
-
-# while True:
-#     subreddits_to_explore = get_subreddits_to_explore()
-#     if not subreddits_to_explore:
-#         break
-#     collect_subreddits(subreddits=subreddits_to_explore)
-#
-
-collect_subreddits(subreddits=["oddlysatisfying", "Unexpected",
-                               "relationship_advice", "WTF", "Minecraft"])

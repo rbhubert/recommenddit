@@ -83,11 +83,15 @@ def create_submission(submission):
     return post
 
 
-def collect_submissions(subreddit: str):
+def collect_submissions(subreddit: str, submissions_limit: int = 350, crossposts_limit: int = 25):
     """
     Goes through each submission in the subreddit, obtaining also all the comments for each submission.
     We also get the information of the subreddit.
     :param subreddit: a str representing the name of a subreddit.
+    :param submissions_limit: a integer between 1 and 1000 representing the number of submissions to be retrieved for the
+    subreddit. Default value=350
+    :param crossposts_limit: a integer between 1 and 1000 representing the number of crossposts to be retrieved for each
+    submission. Default value=3
     :return:
         - subreddit_info: a Subreddit instance with the information of the subreddit.
         - submissions: a list of RedditSubmission's with the information of each submission.
@@ -108,7 +112,8 @@ def collect_submissions(subreddit: str):
 
     while not subreddit_info and int(time.time()) < time_start + timeout:
         try:
-            for submission in reddit_client.subreddit(subreddit).top(limit=350):  # limit=None get all the possible
+            for submission in reddit_client.subreddit(subreddit).top(
+                    limit=submissions_limit):  # limit=None get all the possible
                 # posts
                 print(f"\t [{subreddit}] Collecting submission {submission.id}.")
 
@@ -129,8 +134,8 @@ def collect_submissions(subreddit: str):
                 if submission.num_crossposts == 0:
                     continue
 
-                # We also get the post for each crosspost.
-                for duplicate in submission.duplicates(limit=50):
+                # We also get the post for each crosspost --- limit = 25
+                for duplicate in submission.duplicates(limit=crossposts_limit):
                     post_dup = create_submission(duplicate)
 
                     if not post_dup:
