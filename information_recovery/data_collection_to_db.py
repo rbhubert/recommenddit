@@ -24,16 +24,56 @@ def collect_subreddits(subreddits: [str] = None):
         subreddits = get_subreddits_to_explore()
 
     for subreddit in subreddits:
-        print(f"Getting posts from subreddit: '{subreddit}'.")
 
-        subreddit_info, submissions, crossposts = collect_submissions(subreddit)
-        comments = []
-        for subm in submissions:
-            comments.extend(subm.comments)
+        try:
+            print(f"Getting posts from subreddit: '{subreddit}'.")
 
-        # Update Database
-        database.save_subreddit(subreddit=[subreddit_info])
-        database.save_submissions(submissions=submissions)
-        database.save_comments(comments=comments)
-        database.save_crossposts(crossposts=crossposts)
-        print(f"\t Saving information of subreddit: '{subreddit}'.")
+            subreddit_info, submissions, crossposts = collect_submissions(subreddit)
+            comments = []
+            for subm in submissions:
+                comments.extend(subm.comments)
+
+            # Update Database
+            database.save_subreddit(subreddit=[subreddit_info])
+            database.save_submissions(submissions=submissions)
+            database.save_comments(comments=comments)
+            database.save_crossposts(crossposts=crossposts)
+
+            print(f"\t Saving information of subreddit: '{subreddit}'.")
+        except Exception:
+            print("----- Ending program execution not to happily :c -----")
+            break
+
+
+def complete_collection():
+    """
+    todo
+    """
+
+    subreddits_records = database.get_uncompleted_subreddits(min_submissions=350)
+
+    for row in subreddits_records:
+        subreddit = row[0]
+        post_id = row[1]
+        offset = row[2]
+
+        try:
+            print(f"Getting posts from subreddit: '{subreddit}'.")
+
+            subreddit_info, submissions, crossposts = collect_submissions(subreddit=subreddit,
+                                                                          last_submission=[post_id, offset])
+
+            comments = []
+            for subm in submissions:
+                comments.extend(subm.comments)
+
+            # Update Database
+            database.save_subreddit(subreddit=[subreddit_info])
+            database.save_submissions(submissions=submissions)
+            database.save_comments(comments=comments)
+            database.save_crossposts(crossposts=crossposts)
+
+            print(f"\t Saving information of subreddit: '{subreddit}'.")
+        except Exception:
+            print("----- Ending program execution not to happily :c -----")
+            break
